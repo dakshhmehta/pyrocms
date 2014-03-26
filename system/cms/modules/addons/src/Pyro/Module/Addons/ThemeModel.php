@@ -105,14 +105,13 @@ class ThemeModel extends Eloquent
     {
         return $this
             ->with('options')
-            ->where('type', '!=', 'admin')
             ->get();
     }
 
     /**
      * Find All Themes
      *
-     * Return all known (installed) themes as ThemeModel objects 
+     * Return all known (installed) themes as ThemeModel objects
      *
      * @return  Illuminate\Database\Eloquent\Collection
      */

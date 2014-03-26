@@ -1,89 +1,105 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed');
 
+use Pyro\Module\Blog\BlogCategoryModel;
+use Pyro\Module\Blog\BlogEntryModel;
+
 /**
  * @author  PyroCMS Dev Team
  * @package PyroCMS\Core\Modules\Blog\Controllers
  */
 class Rss extends Public_Controller
 {
-	public function __construct()
-	{
-		parent::__construct();
-		$this->load->model('blog_m');
-		$this->load->helper('xml');
-		$this->load->helper('date');
-		$this->lang->load('blog');
-	}
+    /**
+     * All of the blog categories
+     * @var array
+     */
+    protected $categories = array();
 
-	public function index()
-	{
-		$posts = $this->pyrocache->model('blog_m', 'get_many_by', array(array(
-			'status' => 'live',
-			'limit' => Settings::get('rss_feed_items'))
-		), Settings::get('rss_cache'));
+    /**
+     * Construct
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->lang->load('blog');
 
-		$this->output->set_content_type('application/rss+xml');
-		$html = $this->load->view('rss', $this->_build_feed($posts, $this->lang->line('blog:rss_name_suffix')), true);
+        $this->blogs = new BlogEntryModel;
+        $this->categories = new BlogCategoryModel;
 
-		echo $this->parser->parse_string($html, $posts);
-	}
+        // Set the output content type
+        $this->output->set_content_type('application/rss+xml');
+    }
 
-	public function category($slug = '')
-	{
-		$this->load->model('blog_categories_m');
+    /**
+     * Index
+     * Show recent posts for all categories
+     *
+     * @return void
+     */
+    public function index()
+    {
+        $posts = $this->blogs->findManyPosts(Settings::get('records_per_page'), 0, 'category');
 
-		if ( ! $category = $this->blog_categories_m->get_by('slug', $slug))
-		{
-			redirect('blog/rss/all.rss');
-		}
+        $rss = $this->buildFeed($posts, $this->lang->line('blog:rss_name_suffix'));
 
-		$posts = $this->pyrocache->model('blog_m', 'get_many_by', array(array(
-			'status' => 'live',
-			'category' => $slug,
-			'limit' => Settings::get('rss_feed_items'))
-		), Settings::get('rss_cache'));
+        $this->load->view('rss', array('rss' => $rss));
+    }
 
-		$this->output->set_content_type('application/rss+xml');
-		$html = $this->load->view('rss', $this->_build_feed($posts, $category->title.$this->lang->line('blog:rss_category_suffix')), true);
+    /**
+     * Category
+     * Show recent posts for all categories
+     *
+     * @param string $slug Category slug
+     * @return void
+     */
+    public function category($slug = '')
+    {
+        $category = $this->categories->findBySlug($slug);
 
-		echo $this->parser->parse_string($html, $posts);
-	}
+        if (! $category) {
+            show_404();
+        }
 
-	public function _build_feed($posts = array(), $suffix = '')
-	{
-		$data = new stdClass();
-		$data->rss = new stdClass();
+        $posts = $category->publishedPosts;
 
-		$data->rss->encoding = $this->config->item('charset');
-		$data->rss->feed_name = Settings::get('site_name').' '.$suffix;
-		$data->rss->feed_url = base_url();
-		$data->rss->page_description = sprintf($this->lang->line('blog:rss_posts_title'), Settings::get('site_name'));
-		$data->rss->page_language = 'en-gb';
-		$data->rss->creator_email = Settings::get('contact_email');
+        $rss = $this->buildFeed($posts, $category->title.$this->lang->line('blog:rss_category_suffix'));
 
-		if ( ! empty($posts))
-		{
-			foreach ($posts as $row)
-			{
-				//$row->created_at = human_to_unix($row->created_at);
-				$row->link = site_url('blog/'.date('Y/m', $row->created_at).'/'.$row->slug);
-				$row->created_at = date(DATE_RSS, $row->created_at);
+        $this->load->view('rss', array('rss' => $rss));
+    }
 
-				$intro = (isset($row->intro)) ? $row->intro : $row->body;
+    protected function buildFeed($posts = array(), $suffix = '')
+    {
+        $rss = new stdClass();
 
-				$item = array(
-					//'author' => $row->author,
-					'title' => xml_convert($row->title),
-					'link' => $row->link,
-					'guid' => $row->link,
-					'description' => $intro,
-					'date' => $row->created_at,
-					'category' => $row->category_title
-				);
-				$data->rss->items[] = (object)$item;
-			}
-		}
+        $rss->encoding = $this->config->item('charset');
+        $rss->feed_name = Settings::get('site_name').' '.$suffix;
+        $rss->feed_url = base_url();
+        $rss->page_description = sprintf($this->lang->line('blog:rss_posts_title'), Settings::get('site_name'));
+        $rss->page_language = 'en-gb';
+        $rss->creator_email = Settings::get('contact_email');
 
-		return $data;
-	}
+        if (! empty($posts)) {
+
+            $items = array();
+            foreach ($posts as $post) {
+                $post->link = site_url('blog/'.($post->created_at->format('Y/m')).'/'.$post->slug);
+
+                $intro = $post->intro ?: $post->body;
+
+                $items[] = (object) array(
+                    //'author' => $post->author,
+                    'title' => htmlentities($post->title),
+                    'link' => $post->link,
+                    'guid' => $post->link,
+                    'description' => $intro,
+                    'date' => $post->created_at,
+                    'category' => $post->category ? $post->category->title : '',
+                );
+            }
+
+            $rss->items = $items;
+        }
+
+        return $rss;
+    }
 }

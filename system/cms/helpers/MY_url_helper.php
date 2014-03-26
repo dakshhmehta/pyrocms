@@ -110,3 +110,17 @@ if (!function_exists('index_uri')) {
         return uri_string();
     }
 }
+
+if (!function_exists('referer')) {
+
+    /**
+     * Return the HTTP_REFERER
+     * @return string
+     */
+    function referer($fallback = null)
+    {
+        if (!$fallback) $fallback = index_uri();
+
+        return isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : $fallback;
+    }
+}

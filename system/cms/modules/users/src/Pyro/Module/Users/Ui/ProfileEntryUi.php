@@ -1,6 +1,6 @@
 <?php namespace Pyro\Module\Users\Ui;
 
-use Pyro\Module\Streams_core\EntryUi;
+use Pyro\Module\Streams\Ui\EntryUi;
 
 class ProfileEntryUi extends EntryUi
 {
@@ -15,19 +15,12 @@ class ProfileEntryUi extends EntryUi
 
         // Filters to display on our table
         $this
+            ->with(array('user'))
             ->filters(
                 array(
-                    'user'         => array(
-                        'type'  => 'text',
-                        'title' => 'lang:global:user',
-                        'slug'  => 'user',
-                    ),
-                    'email'        => array(
-                        'type'  => 'text',
-                        'title' => 'lang:global:email',
-                        'slug'  => 'email',
-                    ),
-                    'is_activated' => array(
+                    'user|username',
+                    'user|email',
+                    'is_activated'  => array(
                         'type'    => 'select',
                         'title'   => 'lang:user:active',
                         'slug'    => 'is_activated',
@@ -44,9 +37,18 @@ class ProfileEntryUi extends EntryUi
                 array(
                     'first_name',
                     'last_name',
-                    'lang:user:activated_account_title' => '{{ if entry:is_activated }}{{ helper:lang line="global:yes" }}{{ else }}{{ helper:lang line="global:no" }}{{ endif }}',
-                    'lang:global:user'                  => '{{ entry:username }}',
-                    'lang:global:email'                 => '{{ entry:email }}',
+                    'activated' => array(
+                        'name'     => 'lang:user:activated_account_title',
+                        'template' => '{{ if entry:is_activated }}{{ helper:lang line="global:yes" }}{{ else }}{{ helper:lang line="global:no" }}{{ endif }}',
+                    ),
+                    'user'      => array(
+                        'name'     => 'lang:global:user',
+                        'template' => '{{ entry:user:username }}',
+                    ),
+                    'email'     => array(
+                        'name'     => 'lang:global:email',
+                        'template' => '{{ entry:user:email }}',
+                    ),
                 )
             )
             // Buttons to display in our table
@@ -54,12 +56,12 @@ class ProfileEntryUi extends EntryUi
                 array(
                     array(
                         'label' => lang('global:edit'),
-                        'url'   => 'admin/users/edit/{{ id }}',
+                        'url'   => 'admin/users/edit/{{ user:id }}',
                         'class' => 'btn-sm btn-warning',
                     ),
                     array(
                         'label' => lang('global:delete'),
-                        'url'   => 'admin/users/delete/{{ id }}',
+                        'url'   => 'admin/users/delete/{{ user:id }}',
                         'class' => 'btn-sm btn-danger confirm',
                     ),
                 )

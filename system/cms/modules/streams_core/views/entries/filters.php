@@ -1,21 +1,43 @@
-<?php if (! empty($filters)): ?>
-<section id="filters">
+<?php if (!empty($filters)): ?>
+    <section id="filters">
 
-	<?php echo form_open(null, array('method' => 'get', 'class' => 'form-inline'), array('filter-'.$stream->stream_namespace.'-'.$stream->stream_slug => 'y')); ?>
+        <?php echo form_open(null, array('method' => 'post', 'class' => 'form-inline')); ?>
 
-		<?php foreach ($filters as $filter): ?>
+        <?php foreach ($filters as $filter): ?>
+                <?php if (is_array($filter)): ?>
+                    <?php if (! isset($filter['type']) or $filter['type'] == 'text'): ?>
+                        <?php echo form_input($filter['slug'], isset($appliedFilters[$filterClass->getPostDataFilterKey($filter['slug'])]) ? $appliedFilters[$filterClass->getPostDataFilterKey($filter['slug'])] : null, 'placeholder="'.lang_label($filter['title']).'" class="form-control"'); ?>
+                    <?php endif; ?>
+                    <?php if ($filter['type'] == 'select'): ?>
+                        <?php echo form_dropdown($filter['slug'], $filter['options'], isset($appliedFilters[$filterClass->getPostDataFilterKey($filter['slug'])]) ? $appliedFilters[$filterClass->getPostDataFilterKey($filter['slug'])] : null, 'class=""'); ?>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <?php if ($assignments->findBySlug($filter)): ?>
+                        <?php echo $assignments->findBySlug($filter)->getType()->setStream($stream)->setAppliedFilters($appliedFilters)->filterInput(); ?>
+                    <?php else: ?>
+                        <input type="text" name="f-<?php echo $stream->stream_namespace.'-'.$stream->stream_slug.'-'.$filter.'-contains'; ?>" value="<?php echo isset($appliedFilters[$filterClass->getPostDataFilterKey($filter).'-contains']) ? $appliedFilters[$filterClass->getPostDataFilterKey($filter).'-contains'] : null; ?>" class="form-control" placeholder="<?php echo humanize($filter); ?>">
+                    <?php endif; ?>
+                <?php endif; ?>
+        <?php endforeach; ?>
 
-			<?php if ($field = $assignments->findBySlug($filter)) echo $field->getType()->setStream($stream)->filterInput(); ?>
 
-		<?php endforeach; ?>
-		
-		
-		<button class="button green"><?php echo lang('buttons:filter'); ?></button>
-		<a class="button" href="<?php echo site_url(uri_string()); ?>"><?php echo lang('buttons:clear'); ?></a>
+        <button class="button green" type="submit"
+                name="<?php echo 'filter-' . $stream->stream_namespace . '-' . $stream->stream_slug; ?>"
+                value="apply">
+            <?php echo lang('buttons:filter'); ?>
+        </button>
 
-		<br/><br/>
+        <?php if ($appliedFilters): ?>
+        <button class="button" type="submit"
+                name="<?php echo 'filter-' . $stream->stream_namespace . '-' . $stream->stream_slug; ?>"
+                value="clear">
+            <?php echo lang('buttons:clear'); ?>
+        </button>
+        <?php endif; ?>
 
-	<?php echo form_close(); ?>
+        <br/><br/>
 
-</section>
-<?php endif; ?>
+        <?php echo form_close(); ?>
+
+    </section>
+<?php endif;

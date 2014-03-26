@@ -1,6 +1,6 @@
 <?php namespace Pyro\Module\Blog;
 
-use Pyro\Module\Streams_core\EntryUi;
+use Pyro\Module\Streams\Ui\EntryUi;
 
 class BlogEntryUi extends EntryUi
 {
@@ -23,10 +23,15 @@ class BlogEntryUi extends EntryUi
             ->fields(
                 array(
                     'title',
-                    'category',
-                    'created_by',
+                    'category' => array(
+                        'name' => lang('blog:category_label'),
+                        'template' => '{{ entry:category:title }}',
+                    ),
                     'created_at',
                     'status',
+                    'created_by_user' => array( // @todo - this should be an editable field
+                        'name'     => 'Written By', // @todo - language
+                    ),
                 )
             )
             // Buttons to display in our table
@@ -66,6 +71,10 @@ class BlogEntryUi extends EntryUi
                         'fields' => '*'
                     ),
                 )
-            );
+            ); /*->onQuery(function($model) {
+                    return $model->whereHas('category', function($q) {
+                            $q->where('slug', 'like', 'two%');
+                        });
+                });*/
     }
 }

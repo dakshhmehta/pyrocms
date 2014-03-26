@@ -45,7 +45,7 @@ class ModuleManager
     public function __construct(User $user = null)
     {
         $this->modules = new ModuleModel;
-        
+
         $this->user = $user;
     }
 
@@ -111,8 +111,7 @@ class ModuleManager
         // Fetch the actual module record
         if (isset($this->loaded_modules[$slug])) {
             $record = $this->loaded_modules[$slug];
-        }
-        elseif ((! $record = $this->modules->findBySlug($slug))) {
+        } elseif ((! $record = $this->modules->findBySlug($slug))) {
             return false;
         }
 
@@ -156,7 +155,7 @@ class ModuleManager
             'current_version' => $this->version($record->slug),
             'path' => $location,
             'field_types' => ! empty($info['field_types']) ? $info['field_types'] : false,
-            'updated_on' => $record->updated_on
+            'updated_at' => $record->updated_at
         );
     }
 
@@ -227,14 +226,14 @@ class ModuleManager
                 'current_version' => $this->version($record->slug),
                 'path'            => $location,
                 'field_types'     => ! empty($info['field_types']) ? $info['field_types'] : false,
-                'updated_on'      => $record->updated_on
+                'updated_at'      => $record->updated_at
             );
 
             // store these
             $this->exists[$record->slug] = true;
             $this->enabled[$record->slug] = $record->enabled;
             $this->installed[$record->slug] = $record->installed;
-            
+
             if ( ! empty($params['is_backend'])) {
                 // This user has no permissions for this module
                 if (( ! $this->user->hasAccess($record->slug.'.*'))) {
@@ -380,10 +379,10 @@ class ModuleManager
      * @param   string  $slug   The module slug
      * @return  bool
      */
-    public function upgrade($slug)
+    public function upgrade($slug, $is_core = false)
     {
         // Get info on the new module
-        if (( ! $located = $this->spawnClass($slug, true) or $located = $this->spawnClass($slug, false))) {
+        if (( ! $located = $this->spawnClass($slug, $is_core))) {
             return false;
         }
 
@@ -418,9 +417,9 @@ class ModuleManager
     /**
      * Discover Nonexistant Modules
      *
-     * Go through the list of modules in the file system and see 
+     * Go through the list of modules in the file system and see
      * if they exist in the database
-     * 
+     *
      * @return  bool
      */
     public function registerUnavailableModules()
@@ -473,7 +472,7 @@ class ModuleManager
                             'is_backend'  => ! empty($input['backend']),
                             'skip_xss'    => ! empty($input['skip_xss']),
                             'menu'        => ! empty($input['menu']) ? $input['menu'] : false,
-                            'updated_on'  => time()
+                            'updated_at'  => date('Y-m-d H:i:s')
                         ));
 
                         log_message('debug', sprintf('The information of the module "%s" has been updated', $slug));
@@ -602,8 +601,8 @@ class ModuleManager
     public function help($slug)
     {
         foreach (array(false, true) as $is_core) {
-            $languages = $this->config->item('supported_languages');
-            $default = $languages[$this->config->item('default_language')]['folder'];
+            $languages = ci()->config->item('supported_languages');
+            $default = $languages[ci()->config->item('default_language')]['folder'];
 
             //first try it as a core module
             if ($located = $this->spawnClass($slug, $is_core)) {
@@ -611,7 +610,7 @@ class ModuleManager
 
                 // Check for a hep language file, if not show the default help text from the details.php file
                 if (file_exists($location.'/language/'.$default.'/help_lang.php')) {
-                    $this->lang->load($slug.'/help');
+                    ci()->lang->load($slug.'/help');
 
                     if (lang('help_body')) {
                         return lang('help_body');

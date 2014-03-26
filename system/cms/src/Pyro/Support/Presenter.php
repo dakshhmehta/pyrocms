@@ -1,37 +1,58 @@
 <?php namespace Pyro\Support;
 
-use Pyro\Support\Contracts\ArrayableInterface;
+use Illuminate\Support\Str;
 use McCool\LaravelAutoPresenter\BasePresenter;
+use Pyro\Support\Contracts\ArrayableInterface;
 
 class Presenter extends BasePresenter implements ArrayableInterface
 {
-	protected $appends = array();
+    /**
+     * The array of appended attributes
+     *
+     * @var array
+     */
+    protected $appends = array();
 
+    /**
+     * Convert the object to an array
+     *
+     * @return array
+     */
     public function toArray()
     {
-    	$presenterArray = array();
-
-    	foreach ($this->appends as $method) {
-    		$presenterArray[$method] = $this->{$method}(); 
-    	}
-
-    	$resourceArray = array();
-
-        foreach ($this->resource->getAttributeKeys() as $key) {
-            $resourceArray[$key] = $this->getPresenterAttribute($key);
-        }
-
-    	return array_merge($resourceArray, $presenterArray);
+        return $this->getResourceArray();
     }
 
     /**
-     * Get presenter formatted attribute
-     * @param  string $key
-     * @return mixed
+     * Get resource array
+     *
+     * @return array
      */
-    public function getPresenterAttribute($key)
+    public function getResourceArray()
     {
-        return $this->resource->$key;
+        $resourceArray = array();
+
+        if ($this->resource instanceof ArrayableInterface) {
+            $resourceArray = $this->resource->toArray();
+        }
+
+        return array_merge($resourceArray, $this->getAppendsAttributes());
+    }
+
+    /**
+     * Get appended attributes
+     *
+     * @return array
+     */
+    public function getAppendsAttributes()
+    {
+        $presenterArray = array();
+
+        foreach ($this->appends as $method) {
+            $presenterArray[Str::snake($method)] = $this->{$method}();
+        }
+
+        return $presenterArray;
     }
 
     /**
@@ -41,5 +62,17 @@ class Presenter extends BasePresenter implements ArrayableInterface
     public function __get($key)
     {
         return $this->getPresenterAttribute($key);
+    }
+
+    /**
+     * Get presenter formatted attribute
+     *
+     * @param  string $key
+     *
+     * @return mixed
+     */
+    public function getPresenterAttribute($key)
+    {
+        return $this->resource->{Str::camel($key)};
     }
 }

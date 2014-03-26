@@ -38,7 +38,7 @@ class Fluent extends BaseFluent
 	 * 
 	 * @return @void
 	 */
-	public function boot()
+	protected function boot()
 	{}
 
 	/**
@@ -89,6 +89,14 @@ class Fluent extends BaseFluent
         {
         	$this->callbacks[camel_case(static::CALLBACK_TRIGGER_PREFIX.$method_name)] = \Closure::bind($method_callable, $this, get_class());
         }
+    }
+
+    /**
+     * Reinitialize
+     */
+    public function clear()
+    {
+        self::__construct();
     }
  
  	/**

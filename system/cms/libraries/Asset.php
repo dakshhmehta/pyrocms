@@ -1,4 +1,5 @@
 <?php
+use Pyro\Module\Addons\ModuleManager;
 
 /**
  * Asset: Convenient asset library
@@ -128,6 +129,20 @@ class Asset
 	*/
 	protected static $symlinks = array();
 
+    /**
+     * Loaded JS
+     *
+     * @var array
+     */
+    protected static $loadedJs = array();
+
+    /**
+     * Loaded CSS
+     *
+     * @var array
+     */
+    protected static $loadedCss = array();
+
 	/**
 	 * Loads in the config and sets the variables
 	 */
@@ -247,6 +262,17 @@ class Asset
 		self::$asset_paths[$path_key] = $path_val;
 	}
 
+    /**
+     * Add module path
+     *
+     * @param $slug
+     */
+    public static function add_module_path($slug)
+    {
+        $module = ModuleManager::spawnClass($slug);
+
+        self::add_path($slug, $module[1] . '/');
+    }
 
 	/**
 	 * Set the current default path
@@ -553,12 +579,18 @@ class Asset
 	{
 		if (is_array($script)) {
 			foreach ($script as $each) {
-				self::add_asset('js', $each, $script_min, $group);
+                if (!in_array($each, self::$loadedJs)) {
+                    self::add_asset('js', $each, $script_min, $group);
+                    self::$loadedJs[] = $each;
+                }
 			}
 			return;
 		}
 
-		self::add_asset('js', $script, $script_min, $group);
+        if (!in_array($script, self::$loadedJs)) {
+            self::add_asset('js', $script, $script_min, $group);
+            self::$loadedJs[] = $script;
+        }
 	}
 
 	/**
@@ -574,12 +606,18 @@ class Asset
 	{
 		if (is_array($sheet)) {
 			foreach ($sheet as $each) {
-				self::add_asset('css', $each, $sheet_min, $group);
+                if (!in_array($each, self::$loadedCss)) {
+				    self::add_asset('css', $each, $sheet_min, $group);
+                    self::$loadedCss[] = $each;
+                }
 			}
 			return;
 		}
 
-		self::add_asset('css', $sheet, $sheet_min, $group);
+        if (!in_array($sheet, self::$loadedCss)) {
+    		self::add_asset('css', $sheet, $sheet_min, $group);
+            self::$loadedCss[] = $sheet;
+        }
 	}
 
 	/**
