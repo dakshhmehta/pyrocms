@@ -1,0 +1,6 @@
+[submodule "addons/shared_addons/modules/shop"]
+	path = addons/shared_addons/modules/shop
+	url = https://bitbucket.org/dakshhmehta/shop-for-pyrocms/
+[submodule "addons/shared_addons/modules/shop_categories"]
+	path = addons/shared_addons/modules/shop_categories
+	url = https://bitbucket.org/dakshhmehta/shop-categories/
